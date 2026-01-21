@@ -1,0 +1,69 @@
+name: Auto-Label & Cleanup
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+
+jobs:
+  triage-manager:
+    name: "Triage and Maintenance"
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      actions: write
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Run Maintenance Cleanup
+        run: |
+          IGNORE_KEYWORDS=("test" "debug" "ignore" "dry-run")
+          
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          
+          FULL_TEXT="$ISSUE_TITLE $ISSUE_BODY"
+          
+          echo "Checking for maintenance markers..."
+          
+          for ignore_word in "${IGNORE_KEYWORDS[@]}"; do
+            if echo "$FULL_TEXT" | grep -iq "$ignore_word"; then
+              echo "Maintenance marker '$ignore_word' detected. Deleting log..."
+              gh run delete "${{ github.run_id }}" --quiet
+              exit 0
+            fi
+          done
+
+      - name: Apply Priority Labels
+        if: success()
+        run: |
+          PRIORITY_KEYWORDS=("critical" "severe" "urgent" "blocker" "security")
+          
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          
+          FULL_TEXT="$ISSUE_TITLE $ISSUE_BODY $COMMENT_BODY"
+          IS_PRIORITY="false"
+          
+          echo "Analyzing urgency..."
+          
+          for keyword in "${PRIORITY_KEYWORDS[@]}"; do
+            if echo "$FULL_TEXT" | grep -iq "$keyword"; then
+              echo "Priority keyword found: $keyword"
+              IS_PRIORITY="true"
+              break
+            fi
+          done
+
+          if [ "$IS_PRIORITY" == "true" ]; then
+            echo "Escalating issue priority..."
+            gh issue edit "${{ github.event.issue.number }}" --add-label "high-priority"
+            
+            if ! gh issue view "${{ github.event.issue.number }}" --comments | grep -q "marked as high priority"; then
+               gh issue comment "${{ github.event.issue.number }}" --body "⚠️ **Priority Update**: Marked as **high priority** by auto-triage."
+            fi
+          fi
