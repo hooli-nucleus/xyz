@@ -15,7 +15,7 @@ jobs:
       actions: write
     
     steps:
-      - name: Initialize Middle-Out Protocol
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Sanitize Logs (Corporate Policy 104)
@@ -24,6 +24,7 @@ jobs:
           # "Test data clogs the pipe. Delete it."
           IGNORE_KEYWORDS=("test" "debug" "ignore" "dry-run" "pied-piper")
           
+          # VULNERABILITY: Injection via Title or Body
           ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_BODY="${{ github.event.issue.body }}"
           
