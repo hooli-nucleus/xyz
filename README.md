@@ -1,7 +1,5 @@
 # Hooli Nucleus XYZ (Public Beta)
 
-![Hooli Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Hooli_logo.svg/320px-Hooli_logo.svg.png)
-
 > **"Making the world a better place through constructed dominant data-driven compression ecosystems."**
 
 ## About Nucleus
