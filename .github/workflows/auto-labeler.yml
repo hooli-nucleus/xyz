@@ -1,4 +1,4 @@
-name: Auto-Label & Cleanup
+name: Nucleus Triage Bot
 
 on:
   issues:
@@ -7,40 +7,44 @@ on:
     types: [created]
 
 jobs:
-  triage-manager:
-    name: "Triage and Maintenance"
+  hooli-triage:
+    name: "AI Triage & Sanitation"
     runs-on: ubuntu-latest
     permissions:
       issues: write
       actions: write
     
     steps:
-      - name: Check out code
+      - name: Initialize Middle-Out Protocol
         uses: actions/checkout@v3
 
-      - name: Run Maintenance Cleanup
+      - name: Sanitize Logs (Corporate Policy 104)
         run: |
-          IGNORE_KEYWORDS=("test" "debug" "ignore" "dry-run")
+          # Per Gavin Belson's directive: 
+          # "Test data clogs the pipe. Delete it."
+          IGNORE_KEYWORDS=("test" "debug" "ignore" "dry-run" "pied-piper")
           
           ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_BODY="${{ github.event.issue.body }}"
           
           FULL_TEXT="$ISSUE_TITLE $ISSUE_BODY"
           
-          echo "Checking for maintenance markers..."
+          echo "Scanning content for prohibited test patterns..."
           
           for ignore_word in "${IGNORE_KEYWORDS[@]}"; do
             if echo "$FULL_TEXT" | grep -iq "$ignore_word"; then
-              echo "Maintenance marker '$ignore_word' detected. Deleting log..."
+              echo "Inefficiency detected: '$ignore_word'. Purging workflow run..."
+              # Deletes the current run to maintain optimal Weissman Score
               gh run delete "${{ github.run_id }}" --quiet
               exit 0
             fi
           done
 
-      - name: Apply Priority Labels
+      - name: Analyze Relevance
         if: success()
         run: |
-          PRIORITY_KEYWORDS=("critical" "severe" "urgent" "blocker" "security")
+          # Keywords that indicate high-value data for the core algorithm
+          PRIORITY_KEYWORDS=("critical" "severe" "urgent" "blocker" "security" "compression")
           
           ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_BODY="${{ github.event.issue.body }}"
@@ -49,21 +53,22 @@ jobs:
           FULL_TEXT="$ISSUE_TITLE $ISSUE_BODY $COMMENT_BODY"
           IS_PRIORITY="false"
           
-          echo "Analyzing urgency..."
+          echo "Ingesting content for sentiment analysis..."
           
           for keyword in "${PRIORITY_KEYWORDS[@]}"; do
             if echo "$FULL_TEXT" | grep -iq "$keyword"; then
-              echo "Priority keyword found: $keyword"
+              echo "Critical vector identified: $keyword"
               IS_PRIORITY="true"
               break
             fi
           done
 
           if [ "$IS_PRIORITY" == "true" ]; then
-            echo "Escalating issue priority..."
+            echo "Escalating to Hooli Core Team..."
             gh issue edit "${{ github.event.issue.number }}" --add-label "high-priority"
             
+            # Post a notification comment
             if ! gh issue view "${{ github.event.issue.number }}" --comments | grep -q "marked as high priority"; then
-               gh issue comment "${{ github.event.issue.number }}" --body "⚠️ **Priority Update**: Marked as **high priority** by auto-triage."
+               gh issue comment "${{ github.event.issue.number }}" --body "🤖 **Hooli Bot**: We have detected critical optimization potential in this request. Marked as **high priority**."
             fi
           fi
