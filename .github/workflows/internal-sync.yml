@@ -1,0 +1,52 @@
+name: Sync to Nucleus Core
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_id:
+        description: 'Public Issue ID to sync'
+        required: true
+      triage_note:
+        description: 'Internal justification for promotion'
+        required: true
+        default: 'High value feedback for compression algo'
+
+jobs:
+  archive-feedback:
+    name: "Promote to Internal Core"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Internal Core Repo
+        uses: actions/checkout@v3
+        with:
+          repository: hooli-nucleus/nucleus-core-v3
+          token: ${{ secrets.HOOLI_INT_PAT }}
+          path: nucleus-core
+          fetch-depth: 0
+
+      - name: Append to Feedback Log
+        defaults:
+          run:
+            working-directory: ./nucleus-core
+        run: |
+          # Configure committer identity for the bot
+          git config user.name "Hooli Sync Bot"
+          git config user.email "bot@hooli.xyz"
+          
+          TIMESTAMP=$(date +%Y-%m-%d)
+          
+          echo "Processing promotion for Public Issue #${{ github.event.inputs.issue_id }}..."
+          
+          # Append the triage note to the internal feedback tracker
+          # FORMAT: | Date | ID | Note |
+          echo "| $TIMESTAMP | #${{ github.event.inputs.issue_id }} | ${{ github.event.inputs.triage_note }} |" >> feedback/external_feedback.md
+          
+          echo "Log updated. Committing to Core..."
+          
+          git add feedback/external_feedback.md
+          git commit -m "Promote public issue #${{ github.event.inputs.issue_id }} to Core"
+          
+          # Push changes back to the internal repo
+          git push origin main
+          
+          echo "Sync to Nucleus Core completed."
