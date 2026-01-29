@@ -25,9 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Append to Feedback Log
-        defaults:
-          run:
-            working-directory: ./nucleus-core
+        working-directory: ./nucleus-core
         run: |
           # Configure committer identity for the bot
           git config user.name "Hooli Sync Bot"
