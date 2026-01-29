@@ -35,6 +35,7 @@ jobs:
           
           # Append the triage note to the internal feedback tracker
           # FORMAT: | Date | ID | Note |
+          mkdir -p feedback/
           echo "| $TIMESTAMP | #${{ github.event.inputs.issue_id }} | ${{ github.event.inputs.triage_note }} |" >> feedback/external_feedback.md
           
           echo "Log updated. Committing to Core..."
