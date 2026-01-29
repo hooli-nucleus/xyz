@@ -21,11 +21,9 @@ jobs:
         with:
           repository: hooli-nucleus/nucleus-core-v3
           token: ${{ secrets.HOOLI_INT_PAT }}
-          path: nucleus-core
           fetch-depth: 0
 
       - name: Append to Feedback Log
-        working-directory: ./nucleus-core
         run: |
           # Configure committer identity for the bot
           git config user.name "Hooli Sync Bot"
