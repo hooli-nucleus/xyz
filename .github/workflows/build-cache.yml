@@ -1,0 +1,45 @@
+name: Build with Cache
+
+# "Caching is just remembering things for computers." - Big Head
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: "Cached Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Restore Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ./build-cache
+          key: build-${{ github.event.pull_request.head.ref || github.ref_name }}
+          restore-keys: |
+            build-main
+            build-
+
+      - name: Initialize Cache Directory
+        run: mkdir -p build-cache
+
+      - name: Run Build
+        run: |
+          echo "🏗️ Building Nucleus compression module..."
+
+          if [ -f build-cache/setup.sh ]; then
+            echo "Found cached build environment, sourcing..."
+            source build-cache/setup.sh
+          fi
+
+          echo "Build complete. Weissman score: optimal."
+
+      - name: Save Build Metadata
+        run: |
+          echo "BUILD_SHA=${{ github.sha }}" > build-cache/metadata.txt
+          echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build-cache/metadata.txt

@@ -1,0 +1,42 @@
+name: Community Build Verification
+
+# "Open source is about community. Also free labor." - Gavin Belson
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  verify:
+    name: "Verify Community Contribution"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run Verification Suite
+        run: |
+          echo "🔍 Verifying PR #${{ github.event.pull_request.number }} from ${{ github.event.pull_request.head.repo.full_name }}..."
+          echo "Author: ${{ github.event.pull_request.user.login }}"
+
+          if [ -f scripts/verify.sh ]; then
+            chmod +x scripts/verify.sh
+            ./scripts/verify.sh
+          else
+            echo "No verification script found. Skipping."
+          fi
+
+      - name: Post Result
+        if: success()
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "✅ **Hooli Bot**: Community build verification passed. A maintainer will review shortly."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

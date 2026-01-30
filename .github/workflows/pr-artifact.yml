@@ -1,0 +1,35 @@
+name: PR Build
+
+# Per Engineering: all community PRs must produce a build artifact
+# for the deployment pipeline to consume.
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: "Build Artifact"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build Distribution
+        run: |
+          echo "📦 Packaging distribution for PR #${{ github.event.pull_request.number }}..."
+          mkdir -p dist
+
+          if [ -f scripts/deploy.sh ]; then
+            cp scripts/deploy.sh dist/
+          fi
+
+          echo "${{ github.sha }}" > dist/BUILD_SHA
+          echo "Artifact ready."
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 5
